@@ -1,0 +1,9 @@
+{
+    "name": "peterlafferty/validation",
+    "type": "project",
+    "require": {
+        "php": "^7.1",
+        "silex/silex": "^2.2"
+    },
+    "license": "MIT"
+}

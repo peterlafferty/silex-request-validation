@@ -1,0 +1,30 @@
+[
+    {
+        "id": 1,
+        "code": "U+1F600",
+        "value": "😀",
+        "description": "grinning face",
+        "hasSkinTone": false
+    },
+    {
+        "id": 2,
+        "code": "U+1F601",
+        "value": "😁",
+        "description": "grinning face with smiling eyes",
+        "hasSkinTone": false
+    },
+    {
+        "id": 99,
+        "code": "U+1F466",
+        "value": "👦",
+        "description": "boy",
+        "hasSkinTone": true
+    },
+    {
+        "id": 105,
+        "code": "U+1F467",
+        "value": "👧",
+        "description": "girl",
+        "hasSkinTone": true
+    }
+]
