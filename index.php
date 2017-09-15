@@ -67,7 +67,7 @@ $app->get('/emoji/{id}', function (int $id) use ($app) {
     $response = new Utf8JsonResponse(array_pop($filtered));
 
     return $response;
-});
+})->assert("id", "\d+");
 
 $app->post('/emoji/', function (Request $request) use ($app) {
     return new Utf8JsonResponse(null, 204);
