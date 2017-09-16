@@ -119,8 +119,59 @@ $app->get('/emoji/{id}', function (int $id) use ($app) {
     return $response;
 })->assert("id", "\d+");
 
+
+//{"id": 10, "code": "U+1F4A9", "value": "💩", "description": "pile of poo", "hasSkinTone": false}
 $app->post('/emoji/', function (Request $request) use ($app) {
-    return new Utf8JsonResponse(null, 204);
+    $constraints = new Assert\Collection([
+        'id' => [
+            new Assert\NotNull(),
+            new Assert\Type("int")
+        ],
+        'code' => [
+            new Assert\NotBlank(),
+            new Assert\Type("string"),
+            new Assert\Regex("/U\+[A-Fa-f0-9]{3,6}/")
+        ],
+        'value' => [
+            new Assert\NotBlank(),
+            new Assert\Type("string"),
+        ],
+        'description' => [
+            new Assert\NotBlank(),
+            new Assert\Type("string"),
+        ],
+        'hasSkinTone' => [
+            new Assert\NotNull(),
+            new Assert\Type("boolean")
+        ]
+    ]);
+
+    $postData = $request->request->all();
+    $errors =  $app['validator']->validate(
+        $postData,
+        $constraints
+    );
+
+    if (count($errors) > 0) {
+        $messages = [];
+        foreach ($errors as $error) {
+            $messages[] = $error->getPropertyPath() . ' ' . $error->getMessage();
+        }
+        return new Utf8JsonResponse($messages, 400);
+    }
+
+    return new Utf8JsonResponse($postData, 200);
+})->before(function (Request $request) {
+    if (0 === strpos($request->headers->get('Content-Type'), 'application/json')) {
+        $data = json_decode($request->getContent(), true);
+        if ($data === null) {
+            return new Utf8JsonResponse("invalid json: " . json_last_error_msg(), 400);
+        }
+
+        $request->request->replace(is_array($data) ? $data : array());
+    } else {
+        return new Utf8JsonResponse("Content-Type not accepted", 400);
+    }
 });
 
 
