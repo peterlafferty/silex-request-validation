@@ -3,7 +3,8 @@
     "type": "project",
     "require": {
         "php": "^7.1",
-        "silex/silex": "^2.2"
+        "silex/silex": "^2.2",
+        "symfony/validator": "^3.3"
     },
     "license": "MIT"
 }

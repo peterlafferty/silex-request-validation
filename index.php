@@ -5,8 +5,11 @@ require_once __DIR__.'/vendor/autoload.php';
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
-$app = new Silex\Application();
+use Symfony\Component\Validator\Constraints as Assert;
+use Silex\Provider\ValidatorServiceProvider;
 
+$app = new Silex\Application();
+unset($app['exception_handler']);
 $app['emoji'] = json_decode('[
     {
         "id": 1,
@@ -38,6 +41,8 @@ $app['emoji'] = json_decode('[
     }
 ]');
 
+$app->register(new ValidatorServiceProvider());
+
 /* ignore this hackiness, it makes it simpler to set the headers and escape options*/
 class Utf8JsonResponse extends JsonResponse
 {
@@ -52,14 +57,59 @@ class Utf8JsonResponse extends JsonResponse
     }
 }
 
-$app->get('/emoji/', function () use ($app) {
-    return new Utf8JsonResponse(["emoji" => $app['emoji']]);
+$app->get('/emoji/', function (Request $request) use ($app) {
+
+    $constraints = new Assert\Collection([
+        'hasSkinTone' => [
+            new Assert\NotBlank(),
+            new Assert\Regex("/true|false/")
+        ],
+        'idBelow' => [
+            new Assert\NotBlank(),
+            new Assert\Regex([
+                "pattern" => '/\d+/',
+                'message' => "value should be positive int"
+            ]),
+            new Assert\GreaterThan(0)
+        ]
+    ]);
+
+    $getQuery = $request->query->all();
+    $errors =  $app['validator']->validate(
+        $getQuery,
+        $constraints
+    );
+
+    if (count($errors) > 0) {
+        $messages = [];
+        foreach ($errors as $error) {
+            $messages[] = $error->getPropertyPath() . ' ' . $error->getMessage();
+        }
+        return new Utf8JsonResponse($messages, 400);
+    }
+
+    //at this point we know the values are present and can convert them
+    $hasSkinTone  = filter_var(
+        $getQuery['hasSkinTone'],
+        FILTER_VALIDATE_BOOLEAN
+    );
+    $idBelow = (int)$getQuery['idBelow'];
+
+    $filterEmoji = [];
+    foreach ($app['emoji'] as $emoji) {
+        if ($emoji->id < $idBelow && $emoji->hasSkinTone == $hasSkinTone) {
+            $filterEmoji[] = $emoji;
+        }
+    }
+
+    return new Utf8JsonResponse(["emoji" => $filterEmoji]);
 });
 
 $app->get('/emoji/{id}', function (int $id) use ($app) {
     $filtered = array_filter($app['emoji'], function ($k) use ($id) {
         return $k->id == $id;
     });
+
     if (empty($filtered)) {
         return new Utf8JsonResponse(null, 404);
     }
